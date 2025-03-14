@@ -1,0 +1,8 @@
+-- CREATE USER awsuser WITH PASSWORD 'redshiftpassword';
+-- CREATE DATABASE devdb;
+-- GRANT ALL PRIVILEGES ON DATABASE devdb TO awsuser;
+
+
+CREATE USER awsuser;
+CREATE DATABASE devdb;
+GRANT ALL PRIVILEGES ON DATABASE devdb TO awsuser;

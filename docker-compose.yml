@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  redshift:
+    image: guildeducation/docker-amazon-redshift
+    platform: linux/amd64
+    environment:
+      POSTGRES_PASSWORD: redshiftpassword  # Password for postgres user
+      POSTGRES_USER: awsuser  # Default database user
+      POSTGRES_DB: devdb  # The database to be created during initialization
+      PGPORT: 5439  # Port on which PostgreSQL will run
+      PGDATA: /var/lib/postgresql/data  # Data directory
+    ports:
+      - "5439:5439"  # Expose Redshift port locally
+    volumes:
+      - redshift_data:/var/lib/postgresql/data  # Persist data between container restarts
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Mount custom init script
+    networks:
+      - redshift_network
+    healthcheck:
+      test: ["CMD", "psql", "-U", "awsuser", "-d", "devdb", "-c", "'\\q'"]
+      retries: 5
+      interval: 10s
+      timeout: 5s
+
+  python-app:
+    build: ./python-app  # Build your Python app from the specified directory
+    platform: linux/amd64
+    environment:
+      POSTGRES_PASSWORD: redshiftpassword
+      POSTGRES_USER: awsuser
+      POSTGRES_DB: devdb
+      PGPORT: 5439
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - python-app-data:/app/  # Volume for persistent data in the Python app container
+    networks:
+      - redshift_network
+    depends_on:
+      redshift:
+        condition: service_healthy  # Ensure Redshift is healthy before starting Python app
+
+networks:
+  redshift_network:
+    driver: bridge
+
+volumes:
+  redshift_data:
+  python-app-data:
